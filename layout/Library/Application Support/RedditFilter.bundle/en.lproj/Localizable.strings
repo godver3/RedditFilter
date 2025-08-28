@@ -11,3 +11,5 @@
 "filter.settings.scores.subtitle"="Show vote count on posts and comments";
 "filter.settings.automod.title"="AutoMod";
 "filter.settings.automod.subtitle"="Auto collapse AutoMod comments";
+"filter.settings.animation.title"="Fast Animations";
+"filter.settings.animation.subtitle"="Reduce animation duration for comment collapse";

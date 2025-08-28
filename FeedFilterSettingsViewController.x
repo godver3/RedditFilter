@@ -14,7 +14,7 @@ extern Class CoreClass(NSString *name);
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
   switch (section) {
     case 0:
-      return 7;
+      return 8;
     default:
       return 0;
   }
@@ -99,6 +99,17 @@ extern Class CoreClass(NSString *name);
               [NSUserDefaults.standardUserDefaults boolForKey:kRedditFilterAutoCollapseAutoMod];
           [toggleCell.accessorySwitch addTarget:self
                                          action:@selector(didToggleAutoCollapseAutoModSwitch:)
+                               forControlEvents:UIControlEventValueChanged];
+          break;
+        case 7:
+          mainLabelText = LOC(@"filter.settings.animation.title", @"Fast Animations");
+          detailLabelText =
+              LOC(@"filter.settings.animation.subtitle", @"Reduce animation duration for comment collapse");
+          iconNames = @[ @"icon_clock", @"icon_timer" ];
+          toggleCell.accessorySwitch.on =
+              [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed] > 0;
+          [toggleCell.accessorySwitch addTarget:self
+                                         action:@selector(didToggleAnimationSpeedSwitch:)
                                forControlEvents:UIControlEventValueChanged];
           break;
         default:
@@ -223,5 +234,13 @@ extern Class CoreClass(NSString *name);
 %new
 - (void)didToggleAutoCollapseAutoModSwitch:(UISwitch *)sender {
   [NSUserDefaults.standardUserDefaults setBool:sender.on forKey:kRedditFilterAutoCollapseAutoMod];
+}
+%new
+- (void)didToggleAnimationSpeedSwitch:(UISwitch *)sender {
+  if (sender.on) {
+    [NSUserDefaults.standardUserDefaults setFloat:0.3 forKey:kRedditFilterAnimationSpeed];
+  } else {
+    [NSUserDefaults.standardUserDefaults setFloat:0.0 forKey:kRedditFilterAnimationSpeed];
+  }
 }
 %end

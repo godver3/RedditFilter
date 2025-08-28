@@ -148,63 +148,6 @@ static void filterNode(NSMutableDictionary *node) {
   }
 }
 
-%hook UIView
-
-// Returns YES if the current call stack likely originates from comment/cell code.
-// Adjust the substrings to match the app's class names if needed.
-static BOOL calledFromCommentArea(void) {
-    NSArray<NSString *> *stack = NSThread.callStackSymbols;
-    for (NSString *frame in stack) {
-        if ([frame rangeOfString:@"Comment" options:NSCaseInsensitiveSearch].location != NSNotFound ||
-            [frame rangeOfString:@"CommentCell" options:NSCaseInsensitiveSearch].location != NSNotFound ||
-            [frame rangeOfString:@"PostDetail" options:NSCaseInsensitiveSearch].location != NSNotFound ||
-            [frame rangeOfString:@"comment" options:NSCaseInsensitiveSearch].location != NSNotFound) {
-            return YES;
-        }
-    }
-    return NO;
-}
-
-// Determine a clamped duration. Reads an optional user defaults key so you can tweak without recompiling:
-//   [NSUserDefaults.standardUserDefaults setDouble:0.08 forKey:@"RedditFilterMaxAnimationDuration"];
-static NSTimeInterval clampDuration(NSTimeInterval duration) {
-    NSTimeInterval defaultMax = 0.12; // tune this value to taste (lower = snappier)
-    id val = [NSUserDefaults.standardUserDefaults objectForKey:@"RedditFilterMaxAnimationDuration"];
-    if ([val isKindOfClass:NSNumber.class]) defaultMax = [val doubleValue];
-    return duration > defaultMax ? defaultMax : duration;
-}
-
-+ (void)animateWithDuration:(NSTimeInterval)duration animations:(void (^)(void))animations {
-    if (calledFromCommentArea()) {
-        return %orig(0.0, animations); // Instantly applies the change
-    }
-    return %orig(duration, animations);
-}
-
-+ (void)animateWithDuration:(NSTimeInterval)duration
-                  animations:(void (^)(void))animations
-                  completion:(void (^)(BOOL finished))completion {
-    if (calledFromCommentArea()) {
-        NSTimeInterval newDuration = clampDuration(duration);
-        return %orig(newDuration, animations, completion);
-    }
-    return %orig(duration, animations, completion);
-}
-
-+ (void)animateWithDuration:(NSTimeInterval)duration
-                      delay:(NSTimeInterval)delay
-                    options:(UIViewAnimationOptions)options
-                 animations:(void (^)(void))animations
-                 completion:(void (^)(BOOL finished))completion {
-    if (calledFromCommentArea()) {
-        NSTimeInterval newDuration = clampDuration(duration);
-        return %orig(newDuration, delay, options, animations, completion);
-    }
-    return %orig(duration, delay, options, animations, completion);
-}
-
-%end
-
 %hook NSURLSession
 - (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request
                             completionHandler:(void (^)(NSData *data, NSURLResponse *response,
@@ -412,6 +355,72 @@ static NSTimeInterval clampDuration(NSTimeInterval duration) {
 }
 %end
 
+%end
+
+// Animation duration hooks for comment collapse animations
+%hook UIView
++ (void)animateWithDuration:(NSTimeInterval)duration 
+                      delay:(NSTimeInterval)delay 
+     usingSpringWithDamping:(CGFloat)dampingRatio 
+      initialSpringVelocity:(CGFloat)velocity 
+                    options:(UIViewAnimationOptions)options 
+                 animations:(void (^)(void))animations 
+                 completion:(void (^)(BOOL finished))completion {
+    
+    // Get user preference for animation speed (default to 0.3 if not set)
+    CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
+    if (speedMultiplier <= 0) speedMultiplier = 0.3; // Default to 30% speed
+    
+    // Reduce duration for comment-related animations
+    NSTimeInterval newDuration = duration;
+    if (duration > 0.1) { // Only modify longer animations
+        newDuration = duration * speedMultiplier;
+    }
+    
+    %orig(newDuration, delay, dampingRatio, velocity, options, animations, completion);
+}
+
++ (void)animateWithDuration:(NSTimeInterval)duration 
+                 animations:(void (^)(void))animations 
+                 completion:(void (^)(BOOL finished))completion {
+    
+    CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
+    if (speedMultiplier <= 0) speedMultiplier = 0.3;
+    
+    NSTimeInterval newDuration = duration;
+    if (duration > 0.1) {
+        newDuration = duration * speedMultiplier;
+    }
+    
+    %orig(newDuration, animations, completion);
+}
+
++ (void)animateWithDuration:(NSTimeInterval)duration animations:(void (^)(void))animations {
+    
+    CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
+    if (speedMultiplier <= 0) speedMultiplier = 0.3;
+    
+    NSTimeInterval newDuration = duration;
+    if (duration > 0.1) {
+        newDuration = duration * speedMultiplier;
+    }
+    
+    %orig(newDuration, animations);
+}
+%end
+
+// Hook CATransaction for Core Animation timing
+%hook CATransaction
++ (void)setAnimationDuration:(CFTimeInterval)duration {
+    CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
+    if (speedMultiplier <= 0) speedMultiplier = 0.3;
+    
+    CFTimeInterval newDuration = duration;
+    if (duration > 0.1) {
+        newDuration = duration * speedMultiplier;
+    }
+    %orig(newDuration);
+}
 %end
 
 %ctor {
