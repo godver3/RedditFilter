@@ -1,0 +1,33 @@
+name: IPA Test
+
+on:
+  workflow_dispatch: # manual trigger
+    inputs:
+      appstore_url:
+        description: "App Store URL to test IPA download"
+        required: true
+        default: "https://apps.apple.com/us/app/reddit/id1064216828"
+
+jobs:
+  ipa-test:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Download IPA
+        uses: level3tjg/decryptedappstore-action@main
+        with:
+          appstore_url: ${{ inputs.appstore_url }}
+          cache: false
+          path: ${{ github.workspace }}/TestApp.ipa
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+
+      - name: Check IPA exists
+        run: |
+          if [ -f "${{ github.workspace }}/TestApp.ipa" ]; then
+            echo "✅ IPA downloaded successfully"
+          else
+            echo "❌ IPA download failed"
+            exit 1
+          fi
