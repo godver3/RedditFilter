@@ -367,9 +367,9 @@ static void filterNode(NSMutableDictionary *node) {
                  animations:(void (^)(void))animations 
                  completion:(void (^)(BOOL finished))completion {
     
-    // Get user preference for animation speed (default to 0.3 if not set)
+    // Get user preference for animation speed (default to 0.1 if not set)
     CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
-    if (speedMultiplier <= 0) speedMultiplier = 0.3; // Default to 30% speed
+    if (speedMultiplier <= 0) speedMultiplier = 0.1; // Default to 10% speed
     
     // Reduce duration for comment-related animations
     NSTimeInterval newDuration = duration;
@@ -385,7 +385,7 @@ static void filterNode(NSMutableDictionary *node) {
                  completion:(void (^)(BOOL finished))completion {
     
     CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
-    if (speedMultiplier <= 0) speedMultiplier = 0.3;
+    if (speedMultiplier <= 0) speedMultiplier = 0.1;
     
     NSTimeInterval newDuration = duration;
     if (duration > 0.1) {
@@ -398,7 +398,7 @@ static void filterNode(NSMutableDictionary *node) {
 + (void)animateWithDuration:(NSTimeInterval)duration animations:(void (^)(void))animations {
     
     CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
-    if (speedMultiplier <= 0) speedMultiplier = 0.3;
+    if (speedMultiplier <= 0) speedMultiplier = 0.1;
     
     NSTimeInterval newDuration = duration;
     if (duration > 0.1) {
@@ -413,7 +413,7 @@ static void filterNode(NSMutableDictionary *node) {
 %hook CATransaction
 + (void)setAnimationDuration:(CFTimeInterval)duration {
     CGFloat speedMultiplier = [NSUserDefaults.standardUserDefaults floatForKey:kRedditFilterAnimationSpeed];
-    if (speedMultiplier <= 0) speedMultiplier = 0.3;
+    if (speedMultiplier <= 0) speedMultiplier = 0.1;
     
     CFTimeInterval newDuration = duration;
     if (duration > 0.1) {
