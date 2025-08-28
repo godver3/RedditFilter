@@ -58,6 +58,7 @@ jobs:
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          SESSION: ${{ secrets.ARMCONVERTER_SESSION }}
 
       - name: Download IPA (Manual)
         if: ${{ inputs.create_release && inputs.ipa_url }}
