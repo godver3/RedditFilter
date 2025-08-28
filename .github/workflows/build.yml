@@ -47,7 +47,7 @@ jobs:
           ./configure
           sudo make install
           sudo ldconfig
-      
+
       - name: Download IPA (Auto)
         if: ${{ inputs.create_release && !inputs.ipa_url }}
         uses: level3tjg/decryptedappstore-action@main
@@ -55,10 +55,7 @@ jobs:
           appstore_url: "https://apps.apple.com/us/app/reddit/id1064216828"
           cache: true
           path: ${{ github.workspace }}/App.ipa
-        env:
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          SESSION: ${{ secrets.ARMCONVERTER_SESSION }}
+          token: ${{ secrets.DECRYPTEDAPPSTORE_SESSION_TOKEN }}
 
       - name: Download IPA (Manual)
         if: ${{ inputs.create_release && inputs.ipa_url }}
