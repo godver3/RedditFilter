@@ -176,8 +176,7 @@ static NSTimeInterval clampDuration(NSTimeInterval duration) {
 
 + (void)animateWithDuration:(NSTimeInterval)duration animations:(void (^)(void))animations {
     if (calledFromCommentArea()) {
-        NSTimeInterval newDuration = clampDuration(duration);
-        return %orig(newDuration, animations);
+        return %orig(0.0, animations); // Instantly applies the change
     }
     return %orig(duration, animations);
 }
