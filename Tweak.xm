@@ -148,6 +148,64 @@ static void filterNode(NSMutableDictionary *node) {
   }
 }
 
+%hook UIView
+
+// Returns YES if the current call stack likely originates from comment/cell code.
+// Adjust the substrings to match the app's class names if needed.
+static BOOL calledFromCommentArea(void) {
+    NSArray<NSString *> *stack = NSThread.callStackSymbols;
+    for (NSString *frame in stack) {
+        if ([frame rangeOfString:@"Comment" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+            [frame rangeOfString:@"CommentCell" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+            [frame rangeOfString:@"PostDetail" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+            [frame rangeOfString:@"comment" options:NSCaseInsensitiveSearch].location != NSNotFound) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+// Determine a clamped duration. Reads an optional user defaults key so you can tweak without recompiling:
+//   [NSUserDefaults.standardUserDefaults setDouble:0.08 forKey:@"RedditFilterMaxAnimationDuration"];
+static NSTimeInterval clampDuration(NSTimeInterval duration) {
+    NSTimeInterval defaultMax = 0.12; // tune this value to taste (lower = snappier)
+    id val = [NSUserDefaults.standardUserDefaults objectForKey:@"RedditFilterMaxAnimationDuration"];
+    if ([val isKindOfClass:NSNumber.class]) defaultMax = [val doubleValue];
+    return duration > defaultMax ? defaultMax : duration;
+}
+
++ (void)animateWithDuration:(NSTimeInterval)duration animations:(void (^)(void))animations {
+    if (calledFromCommentArea()) {
+        NSTimeInterval newDuration = clampDuration(duration);
+        return %orig(newDuration, animations);
+    }
+    return %orig(duration, animations);
+}
+
++ (void)animateWithDuration:(NSTimeInterval)duration
+                  animations:(void (^)(void))animations
+                  completion:(void (^)(BOOL finished))completion {
+    if (calledFromCommentArea()) {
+        NSTimeInterval newDuration = clampDuration(duration);
+        return %orig(newDuration, animations, completion);
+    }
+    return %orig(duration, animations, completion);
+}
+
++ (void)animateWithDuration:(NSTimeInterval)duration
+                      delay:(NSTimeInterval)delay
+                    options:(UIViewAnimationOptions)options
+                 animations:(void (^)(void))animations
+                 completion:(void (^)(BOOL finished))completion {
+    if (calledFromCommentArea()) {
+        NSTimeInterval newDuration = clampDuration(duration);
+        return %orig(newDuration, delay, options, animations, completion);
+    }
+    return %orig(duration, delay, options, animations, completion);
+}
+
+%end
+
 %hook NSURLSession
 - (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request
                             completionHandler:(void (^)(NSData *data, NSURLResponse *response,
